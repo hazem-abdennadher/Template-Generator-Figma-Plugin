@@ -3,58 +3,59 @@ figma.showUI(__html__);
 
 figma.ui.onmessage = (msg) => {
   if (msg.type === 'actionGenerate') {
-    const { templateName, color } = msg.data;
-    console.log(msg.data);
-    // create a frame
-    const parentFrame = figma.createFrame();
-    parentFrame.name = templateName;
-    // add layout
-    parentFrame.layoutMode = 'VERTICAL';
-    parentFrame.paddingLeft = 64;
-    parentFrame.paddingRight = 64;
-    parentFrame.paddingTop = 64;
-    parentFrame.paddingBottom = 64;
+    // current page
+    const currentPage = figma.currentPage;
+    const DESIGN = figma.createFrame();
 
-    parentFrame.itemSpacing = 32;
-    parentFrame.counterAxisSizingMode = 'AUTO';
-    parentFrame.primaryAxisSizingMode = 'AUTO';
+    DESIGN.name = 'my design';
+    DESIGN.layoutMode = 'VERTICAL';
+    DESIGN.counterAxisSizingMode = 'AUTO';
+    DESIGN.primaryAxisSizingMode = 'AUTO';
+    // create random design
+    components.forEach((comp) => {
+      // select random child and added to design
+      const selectedComp = figma.root.children.find(
+        (child) => child.id === comp.id
+      );
+      if (!selectedComp) return;
+      const randomChild =
+        selectedComp.children[
+          Math.floor(Math.random() * selectedComp.children.length)
+        ].clone();
+      DESIGN.appendChild(randomChild);
+    });
 
-    // Generate 10 tints
-    for (let i = 0; i < 10; i++) {
-      const tint = figma.createEllipse();
-      tint.name = 'Tint ' + (100 - i * 10);
-      tint.resize(100, 100);
-      function hexToRgb(hex: string) {
-        var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result
-          ? {
-              r: parseInt(result[1], 16),
-              g: parseInt(result[2], 16),
-              b: parseInt(result[3], 16),
-            }
-          : null;
-      }
-      const rgb = hexToRgb(color) as { r: number; g: number; b: number };
-      tint.fills = [
-        {
-          type: 'SOLID',
-          color: {
-            r: (rgb?.r / 255) as number,
-            g: (rgb?.g / 255) as number,
-            b: (rgb?.b / 255) as number,
-          },
-        },
-      ];
-      tint.opacity = (100 - i * 10) / 100;
-      parentFrame.appendChild(tint);
-    }
-
-    figma.viewport.scrollAndZoomIntoView([parentFrame]);
-    figma.closePlugin('Template generated successfully!');
+    currentPage.appendChild(DESIGN);
   }
-
   if (msg.type === 'actionExit') {
     figma.closePlugin();
   }
   figma.closePlugin();
 };
+
+const components = [
+  {
+    name: 'navbar',
+    id: '129:13658',
+  },
+  {
+    name: 'hero header',
+    id: '519:5759',
+  },
+  {
+    name: 'header',
+    id: '519:5701',
+  },
+  {
+    name: 'Features',
+    id: '507:5360',
+  },
+  {
+    name: 'Gallery',
+    id: '1161:5816',
+  },
+  {
+    name: 'footer',
+    id: '136:5239',
+  },
+];
