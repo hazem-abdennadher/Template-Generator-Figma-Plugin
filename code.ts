@@ -1,32 +1,42 @@
 // This shows the HTML page in "ui.html".
 figma.showUI(__html__);
 
-const test = async () => {
-  const response = await fetch(
-    'https://rams901-poc-design.hf.space/run/predict',
-    {
-      method: 'POST',
-      body: JSON.stringify({ data: ['Generate 3 home page variations'] }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }
-  );
-  const json = await response.json();
-  return json;
-};
+// const test = async () => {
+//   const response = await fetch(
+//     'https://rams901-poc-design.hf.space/run/predict',
+//     {
+//       method: 'POST',
+//       body: JSON.stringify({ data: ['Generate 3 home page variations'] }),
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//     }
+//   );
+//   const json = await response.json();
+//   return json;
+// };
 
 figma.ui.onmessage = async (msg) => {
   if (msg.type === 'actionGenerate') {
-    const response = await test();
-    console.log(response);
-    const textNode = figma.createText();
-    await figma.loadFontAsync(textNode.fontName as FontName);
-    textNode.characters = response.data[0];
-    textNode.x = 100;
-    textNode.y = 100;
-    figma.currentPage.appendChild(textNode);
-    figma.closePlugin('Template generated successfully!');
+    // const response = await test();
+    // console.log(response);
+    // const textNode = figma.createText();
+    // await figma.loadFontAsync(textNode.fontName as FontName);
+    // textNode.characters = response.data[0];
+    // textNode.x = 100;
+    // textNode.y = 100;
+    // figma.currentPage.appendChild(textNode);
+    // figma.closePlugin('Template generated successfully!');
+    const allNodes = figma.root.children.map((node) => {
+      return {
+        id: node.id,
+        name: node.name,
+        children: node.children.map((child) => {
+          return { id: child.id, name: child.name };
+        }),
+      };
+    });
+    console.log(allNodes);
 
     // const { templateName, color } = msg.data;
     // console.log(msg.data);
