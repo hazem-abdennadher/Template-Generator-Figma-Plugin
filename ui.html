@@ -1,0 +1,45 @@
+<h1>Template Generator</h1>
+
+<form class="">
+  <label>
+    <span>Color</span>
+    <input type="color" name="color" />
+  </label>
+  <label>
+    <span>Template Name</span>
+    <input type="text" name="templateName" />
+  </label>
+
+  <div>
+    <button type="submit">Generate</button>
+    <button type="reset">Cancel</button>
+  </div>
+</form>
+
+<script>
+  const cancelBtn = document.querySelector('button[type="reset"]');
+  cancelBtn.addEventListener('click', () => {
+    parent.postMessage({ pluginMessage: { type: 'actionExit' } }, '*');
+  });
+
+  const submitBtn = document.querySelector('button[type="submit"]');
+  submitBtn.addEventListener('click', () => {
+    // get the form
+    const form = document.querySelector('form');
+    // get the form data
+    const formData = new FormData(form);
+    // create an object from the form data
+    const data = Object.fromEntries(formData);
+    // console.log(data);
+
+    parent.postMessage(
+      {
+        pluginMessage: {
+          type: 'actionGenerate',
+          data,
+        },
+      },
+      '*'
+    );
+  });
+</script>
