@@ -16,14 +16,14 @@
   </div>
 </form>
 
-<script>
+<script type="module">
   const cancelBtn = document.querySelector('button[type="reset"]');
   cancelBtn.addEventListener('click', () => {
     parent.postMessage({ pluginMessage: { type: 'actionExit' } }, '*');
   });
 
   const submitBtn = document.querySelector('button[type="submit"]');
-  submitBtn.addEventListener('click', () => {
+  submitBtn.addEventListener('click', async () => {
     // get the form
     const form = document.querySelector('form');
     // get the form data
