@@ -1,13 +1,13 @@
 figma.showUI(__html__);
 // This shows the HTML page in "ui.html".
 
-const GetDate = async () => {
+const GetDate = async (prompt: string) => {
   const result = await fetch(
     'https://60df-193-95-81-57.ngrok-free.app/imagine',
     {
       method: 'POST',
       body: JSON.stringify({
-        prompt: 'generate 3 home page designs for now',
+        prompt: prompt,
       }),
       headers: {
         'Content-Type': 'application/json',
@@ -21,9 +21,9 @@ const GetDate = async () => {
 figma.ui.onmessage = async (msg) => {
   if (msg.type === 'actionGenerate') {
     // get data
-    // const data = await GetDate();
+    const data = await GetDate(msg.data.prompt);
+    // const data = obj;
     // current page
-    const data = obj;
     const currentPage = figma.currentPage;
     const Container = figma.createFrame();
     Container.name = 'Container';
@@ -40,13 +40,11 @@ figma.ui.onmessage = async (msg) => {
     const PALETTES = CreatePalettes(data.colors);
     const FONTS = await CreateFonts(data.fonts);
 
-    SelectTextNodes(VARIATIONS);
-
     Container.appendChild(PALETTES);
     Container.appendChild(FONTS);
     Container.appendChild(VARIATIONS);
-    currentPage.appendChild(Container);
 
+    currentPage.appendChild(Container);
     figma.closePlugin();
   }
 
@@ -54,14 +52,21 @@ figma.ui.onmessage = async (msg) => {
     figma.closePlugin();
   }
 };
+const ComponentSelection: any = [];
 
-const SelectTextNodes = (node: any) => {
+const SelectTextNodes = (node: any, prev?: any) => {
   if (node.type === 'TEXT') {
-    figma.currentPage.selection = [node];
+    figma.currentPage.selection = [...prev, node];
   }
-  if (node.children) {
+  // skip button and icon
+  if (
+    node.children &&
+    node.children.length > 0 &&
+    node.name !== 'Button' &&
+    node.name !== 'Icon'
+  ) {
     node.children.forEach((child: any) => {
-      SelectTextNodes(child);
+      SelectTextNodes(child, figma.currentPage.selection);
     });
   }
 };
@@ -69,35 +74,37 @@ const SelectTextNodes = (node: any) => {
 const CreateFonts = async (fonts: string[][]) => {
   const FONTS = figma.createFrame();
   FONTS.name = 'Fonts';
-  FONTS.layoutMode = 'HORIZONTAL';
+  FONTS.layoutMode = 'VERTICAL';
   FONTS.counterAxisSizingMode = 'AUTO';
   FONTS.primaryAxisSizingMode = 'AUTO';
   FONTS.clipsContent = false;
   FONTS.itemSpacing = 100;
   FONTS.fills = [{ type: 'SOLID', color: { r: 0, g: 0, b: 0 }, opacity: 0 }];
+  for (let j = 0; j < fonts.length; j++) {
+    const element = fonts[j];
+    const frame = figma.createFrame();
+    frame.name = 'Font ' + j;
+    if (j === 0) frame.name = 'Primary';
+    if (j === 1) frame.name = 'Secondary';
+    if (j === 2) frame.name = 'Tertiary';
+    frame.layoutMode = 'HORIZONTAL';
+    frame.counterAxisSizingMode = 'AUTO';
+    frame.primaryAxisSizingMode = 'AUTO';
+    frame.clipsContent = false;
+    frame.itemSpacing = 100;
+    frame.fills = [{ type: 'SOLID', color: { r: 0, g: 0, b: 0 }, opacity: 0 }];
+    for (let i = 0; i < element.length; i++) {
+      let el = element;
+      const h1 = await createFont({
+        font: el[i],
+        name: el[i],
+        text: el[i],
+      });
+      frame.appendChild(h1);
+    }
+    FONTS.appendChild(frame);
+  }
 
-  await fonts.forEach(async (font: string[], index: number) => {
-    const fontFrame = figma.createFrame();
-    fontFrame.name = 'Font ' + index;
-    if (index === 0) fontFrame.name = 'Primary';
-    if (index === 1) fontFrame.name = 'Secondary';
-    if (index === 2) fontFrame.name = 'Tertiary';
-    fontFrame.layoutMode = 'VERTICAL';
-    fontFrame.counterAxisSizingMode = 'AUTO';
-    fontFrame.primaryAxisSizingMode = 'AUTO';
-    fontFrame.clipsContent = false;
-    fontFrame.itemSpacing = 32;
-    fontFrame.fills = [{ type: 'SOLID', color: { r: 0.8, g: 0.8, b: 0.8 } }];
-    await font.forEach(async (font: string, index: number) => {
-      let name = font;
-      if (index === 0) name = 'Body';
-      if (index === 1) name = 'Heading';
-      const __font = await createFont({ font, name });
-      console.log('font', __font);
-      fontFrame.appendChild(__font);
-    });
-    FONTS.appendChild(fontFrame);
-  });
   return FONTS;
 };
 
@@ -170,10 +177,48 @@ const CreateVariation = (variation: any, index: number) => {
     if (!COMPONENT_INSTANCE_CLONE) return;
     COMPONENT_INSTANCE_CLONE.name = name;
     VARIATION.appendChild(COMPONENT_INSTANCE_CLONE);
+    // SelectTextNodes(COMPONENT_INSTANCE_CLONE);
+    // ComponentSelection.push({
+    //   componentName: name,
+    //   componentId: id,
+    //   SelectedText: figma.currentPage.selection.map((node: any) => {
+    //     return {
+    //       parent: node.parent.name,
+    //       name: node.name,
+    //       id: node.id,
+    //       characters: node.characters,
+    //       style: TextStyles.find((style) => style.id === node.textStyleId),
+    //     };
+    //   }),
+    // });
   });
   VARIATION.x = (100 + VARIATION.width) * index;
   return VARIATION;
 };
+
+const TextStyles: Array<{
+  name: string;
+  id: string;
+  fontFamily: string;
+  fontSize: number;
+  fontWeight: string;
+  textCase: string;
+}> = [];
+const getTextStyleInfo = () => {
+  figma.getLocalTextStyles().forEach((style) => {
+    TextStyles.push({
+      name: style.name,
+      id: style.id,
+      fontFamily: style.fontName.family,
+      fontSize: style.fontSize,
+      fontWeight: style.fontName.style,
+      textCase: style.textCase,
+    });
+  });
+};
+
+getTextStyleInfo();
+console.log(TextStyles);
 
 const createComponent = (id: string) => {
   const COMPONENT = figma.getNodeById(id);
@@ -248,8 +293,11 @@ const createFont = async ({
   await figma.loadFontAsync({ family: font, style: 'Regular' });
   fontText.fontName = { family: font, style: 'Regular' };
   fontText.characters = text || 'lorem ipsum dolor sit amet';
-  fontText.resize(300, 100);
-  fontText.fontSize = 24;
+  // align
+  fontText.textAlignHorizontal = 'CENTER';
+  fontText.textAlignVertical = 'CENTER';
+
+  fontText.fontSize = 128;
   return fontText;
 };
 
